@@ -42,7 +42,7 @@
 /* USER CODE BEGIN PTD */
 int32_t TestSinusoid(uint32_t ms_time) {
 	double t = (double)ms_time/1000.0;
-	return (int32_t)floor(4000.0*sin(M_PI*t/2.5));
+	return (int32_t)floor(4000.0*(sin(M_PI*t/2)-1.0));
 }
 /* USER CODE END PTD */
 
