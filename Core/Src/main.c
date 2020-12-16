@@ -36,13 +36,14 @@
 #include "Serial.h"
 #include "Encoder_3C.h"
 #include "StepperRT.h"
+#include "Easycat.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 int32_t TestSinusoid(uint32_t ms_time) {
 	double t = (double)ms_time/1000.0;
-	return (int32_t)floor(4000.0*sin(M_PI*t/2.5));
+	return (int32_t)floor(4000.0*(sin(M_PI*t/2)-1.0));
 }
 /* USER CODE END PTD */
 
@@ -67,6 +68,7 @@ led_t green_led,
 	  red_led;
 enc3c_t pulley_enc;
 stepperRT_t motor;
+Easycat ethercat;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -129,47 +131,22 @@ int main(void)
 		Direction_PIN_GPIO_Port, Direction_PIN_Pin,
 		Alarm_PIN_GPIO_Port, Alarm_PIN_Pin,
 		STEP_PER_REV, STP_CW);
+  easyCat_Init(&ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  led_blink(&green_led,1000);
-  led_blink(&red_led,500);
-  led_blink(&yellow_led,250);
-  stepper_enable(&motor);
-//  serial_read(&serial);
-//  serial_write(&serial,(uint8_t*)"wow che fico!\r");
-  uint32_t ms_time_offset = *(control_timer.now);
-  uint16_t counter = 0;
-  uint16_t direction = 1;
+
   while (1)
   {
       if (timer_elapsed(&control_timer)) {
-//    	  if (counter <= 16000 && direction) {
-//    		  counter ++;
-//    		  HAL_GPIO_WritePin(motor.stepper_par.direction_port, motor.stepper_par.direction_pin, GPIO_PIN_SET);
-//    		  if (counter == 16000) direction = 0;
-//    	  } else if (counter >= 0) {
-//    		  counter --;
-//    		  HAL_GPIO_WritePin(motor.stepper_par.direction_port, motor.stepper_par.direction_pin, GPIO_PIN_RESET);
-//    		  if (counter == 0) direction = 1;
-//    	  }
-//    	  HAL_GPIO_TogglePin(motor.stepper_par.step_port, motor.stepper_par.step_pin);
-    	  motor.stepper_var.target_position = TestSinusoid(*(control_timer.now)-ms_time_offset);
-  //  	  motor.stepper_var.target_position ++;
-    	  stepper_set_update_flag(&motor);
+    	  easyCat_MainTask(&ethercat);
+
       }
 	  led_update_blink(&green_led);
 	  led_update_blink(&yellow_led);
 	  led_update_blink(&red_led);
-//	  if (elapsed(&control_timer)) {
-//		  led_blink(&green_led,green_led.led_var.blink_period*4);
-//		    led_blink(&red_led,red_led.led_var.blink_period*4);
-//		    led_blink(&yellow_led,yellow_led.led_var.blink_period*4);
-//	  }
-//	s
 
-//	  HAL_UART_Transmit(&huart6, &data[0], 7, 5);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
