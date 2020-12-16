@@ -9,6 +9,8 @@
 #define INC_EASYCAT_H_
 
 #include "main.h"
+#include "Cable_robot_winch.h"
+#define CUSTOM
 
 #if (!defined BYTE_NUM && !defined CUSTOM)
   #define BYTE_NUM 32
@@ -241,42 +243,40 @@ typedef struct  {
 	SPI_HandleTypeDef *spi_line;
 	GPIO_TypeDef* SCS_port;
 	uint16_t SCS_pin;
-	GPIO_TypeDef* LED_port;
-	uint16_t LED_pin;
 	PROCBUFFER_OUT *BufferOut;
 	PROCBUFFER_IN *BufferIn;
-} HandleEasyCat;                        //definisce il tipo di struttura contenente le impostazioni di
+} Easycat;                        //definisce il tipo di struttura contenente le impostazioni di
                                         //configurazione del trasferimento SPI e i puntatori ai buffer
                                         //locali di trasmissione e ricezione EtherCAT
 
 //-------------------------------------------------------------------------------------------------
 
-void EasyCat_Setup(HandleEasyCat *hEC, SPI_HandleTypeDef *hspi, GPIO_TypeDef* SPI_CHIP_SELECT_PORT, uint16_t SPI_CHIP_SELECT);
+void easyCat_Init(Easycat *hEC, SPI_HandleTypeDef *hspi, GPIO_TypeDef* SPI_CHIP_SELECT_PORT, uint16_t SPI_CHIP_SELECT);
                                                                        //imposta la comunicazione, richiedendo in ingresso la struttura handler
                                                                        //e le informazioni relative alla linea SPI, al chip select e alla modalità
                                                                        //di comunicazione
 
-unsigned char EasyCat_MainTask(HandleEasyCat *hEC);          //accede alla memoria di master input e output presente sul chip LAN,
+unsigned char easyCat_MainTask(Easycat *hEC);          //accede alla memoria di master input e output presente sul chip LAN,
                                                              //in modalità asincrona è da chiamare ciclicamente nel main
 
-uint8_t EasyCat_Init(HandleEasyCat *hEC); //inizializza la comunicazione, è chiamata all'interno del setup
+uint8_t easyCat_Setup(Easycat *hEC); //inizializza la comunicazione, è chiamata all'interno del setup
 
-void EasyCat_SPIParametersCheck(HandleEasyCat *hEC);  //verifica i parametri di comunicazione SPI
+void easyCat_SPIParametersCheck(Easycat *hEC);  //verifica i parametri di comunicazione SPI
                                                       //(prescaler, dimensione pacchetti di dati, ordine byte)
 
-void EasyCat_SPIWriteRegisterDirect(HandleEasyCat *hEC, unsigned short Address, unsigned long DataOut);  //Scrittura di registri direttamente accessibili
-unsigned long EasyCat_SPIReadRegisterDirect(HandleEasyCat *hEC, unsigned short Address, unsigned char Len);  //Lettura di registri direttamente accessibili
+void easyCat_SPIWriteRegisterDirect(Easycat *hEC, unsigned short Address, unsigned long DataOut);  //Scrittura di registri direttamente accessibili
+unsigned long easyCat_SPIReadRegisterDirect(Easycat *hEC, unsigned short Address, unsigned char Len);  //Lettura di registri direttamente accessibili
 
-void EasyCat_SPIWriteRegisterIndirect(HandleEasyCat *hEC, unsigned long  DataOut, unsigned short Address, unsigned char Len);  //Scrittura di registri non direttamente accessibili
-unsigned long EasyCat_SPIReadRegisterIndirect(HandleEasyCat *hEC, unsigned short Address, unsigned char Len);  //Lettura di registri non direttamente accessibili
+void easyCat_SPIWriteRegisterIndirect(Easycat *hEC, unsigned long  DataOut, unsigned short Address, unsigned char Len);  //Scrittura di registri non direttamente accessibili
+unsigned long easyCat_SPIReadRegisterIndirect(Easycat *hEC, unsigned short Address, unsigned char Len);  //Lettura di registri non direttamente accessibili
 
-void EasyCat_SPIReadProcRamFifo(HandleEasyCat *hEC);    //Lettura dalla RAM di processo di master output
-void EasyCat_SPIWriteProcRamFifo(HandleEasyCat *hEC);   //Scrittura nella RAM di processo di master input
+void easyCat_SPIReadProcRamFifo(Easycat *hEC);    //Lettura dalla RAM di processo di master output
+void easyCat_SPIWriteProcRamFifo(Easycat *hEC);   //Scrittura nella RAM di processo di master input
 
-inline void EasyCat_SCS_Low(HandleEasyCat *hEC) { HAL_GPIO_WritePin(hEC->SCS_port, hEC->SCS_pin, GPIO_PIN_RESET); }  //Attiva la comunicazione SPI
-inline void EasyCat_SCS_High(HandleEasyCat *hEC) { HAL_GPIO_WritePin(hEC->SCS_port, hEC->SCS_pin, GPIO_PIN_SET); }  //Termina la comunicazione SPI
+inline void easyCat_SCS_Low(Easycat *hEC) { HAL_GPIO_WritePin(hEC->SCS_port, hEC->SCS_pin, GPIO_PIN_RESET); }  //Attiva la comunicazione SPI
+inline void easyCat_SCS_High(Easycat *hEC) { HAL_GPIO_WritePin(hEC->SCS_port, hEC->SCS_pin, GPIO_PIN_SET); }  //Termina la comunicazione SPI
 
-inline void EasyCat_SPI_TransferTx(HandleEasyCat *hEC, uint16_t size) { HAL_SPI_Transmit(hEC->spi_line, &Tx[0], size, 1); }; //Trasmissione SPI
-inline void EasyCat_SPI_TransferRx(HandleEasyCat *hEC, uint16_t size) { HAL_SPI_Receive(hEC->spi_line, &Rx[0], size, 1); };  //Ricezione SPI
+inline void easyCat_SPI_TransferTx(Easycat *hEC, uint16_t size) { HAL_SPI_Transmit(hEC->spi_line, &Tx[0], size, 1); }; //Trasmissione SPI
+inline void easyCat_SPI_TransferRx(Easycat *hEC, uint16_t size) { HAL_SPI_Receive(hEC->spi_line, &Rx[0], size, 1); };  //Ricezione SPI
 
 #endif /* INC_EASYCAT_H_ */
