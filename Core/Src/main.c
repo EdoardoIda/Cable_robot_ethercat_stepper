@@ -36,6 +36,7 @@
 #include "Serial.h"
 #include "Encoder_3C.h"
 #include "StepperRT.h"
+#include "Easycat.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -140,8 +141,7 @@ int main(void)
 //  serial_read(&serial);
 //  serial_write(&serial,(uint8_t*)"wow che fico!\r");
   uint32_t ms_time_offset = *(control_timer.now);
-  uint16_t counter = 0;
-  uint16_t direction = 1;
+
   while (1)
   {
       if (timer_elapsed(&control_timer)) {
