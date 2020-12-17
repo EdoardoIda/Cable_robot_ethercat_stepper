@@ -31,13 +31,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "Led.h"
-#include "Control_timer.h"
-#include "Serial.h"
-#include "Encoder_3C.h"
-#include "StepperRT.h"
-#include "Easycat.h"
+#include "State_manager.h"
 #include "Error_manager.h"
+#include "Easycat.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,8 +44,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define CONTROL_PERIOD 1 // milliseconds
-#define STEP_PER_REV 8000 // also set in hardware
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -59,15 +55,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-control_timer_t control_timer;
-led_t green_led,
-	  yellow_led,
-	  red_led;
-error_t error_handler;
-serial_t serial;
-enc3c_t pulley_enc;
-stepperRT_t motor;
 Easycat ethercat;
+error_t error_handler;
+
 
 /* USER CODE END PV */
 
@@ -75,7 +65,7 @@ Easycat ethercat;
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void Init_drive();
-void Poll4updates();
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -125,12 +115,12 @@ int main(void)
 
   while (1)
   {
-      if (timer_elapsed(&control_timer)) {
+      if (manager_timer_elapsed()) {
     	  easyCat_Read(&ethercat);
 
     	  easyCat_Write(&ethercat);
       }
-      Poll4updates();
+      manager_poll4updates();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -235,11 +225,7 @@ void Init_drive() {
 	  easyCat_Init(&ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin,&error_handler);
 }
 
-void Poll4updates() {
-	led_update_blink(&green_led);
-	led_update_blink(&yellow_led);
-	led_update_blink(&red_led);
-}
+
 /* USER CODE END 4 */
 
 /**
