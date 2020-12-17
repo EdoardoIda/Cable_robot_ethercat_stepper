@@ -37,18 +37,18 @@
 #include "Encoder_3C.h"
 #include "StepperRT.h"
 #include "Easycat.h"
+#include "Error_manager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-int32_t TestSinusoid(uint32_t ms_time) {
-	double t = (double)ms_time/1000.0;
-	return (int32_t)floor(4000.0*(sin(M_PI*t/2)-1.0));
-}
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define CONTROL_PERIOD 1 // milliseconds
+#define STEP_PER_REV 8000 // also set in hardware
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -60,21 +60,22 @@ int32_t TestSinusoid(uint32_t ms_time) {
 
 /* USER CODE BEGIN PV */
 control_timer_t control_timer;
-#define CONTROL_PERIOD 1 // milliseconds
-#define STEP_PER_REV 8000 // also set in hardware
-serial_t serial;
 led_t green_led,
 	  yellow_led,
 	  red_led;
+error_t error_handler;
+serial_t serial;
 enc3c_t pulley_enc;
 stepperRT_t motor;
 Easycat ethercat;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+void Init_drive();
+void Poll4updates();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -116,22 +117,7 @@ int main(void)
   MX_TIM3_Init();
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
-  timer_init(&control_timer, CONTROL_PERIOD);
-  led_init(&green_led, Green_Led_PIN_GPIO_Port, Green_Led_PIN_Pin, control_timer.now);
-  led_init(&yellow_led, Yellow_Led_PIN_GPIO_Port, Yellow_Led_PIN_Pin, control_timer.now);
-  led_init(&red_led, Red_Led_PIN_GPIO_Port, Red_Led_PIN_Pin, control_timer.now);
-  serial_init(&serial, &huart6, SERIAL_INTERRUPT);
-  encoder_init(&pulley_enc, Enc_A_PIN_GPIO_Port, Enc_A_PIN_Pin, Enc_B_PIN_GPIO_Port, Enc_B_PIN_Pin,
-		  Enc_Z_PIN_GPIO_Port, Enc_Z_PIN_Pin, ENC3_FORWARD, 5000);
-  stepper_init(&motor, &htim3, CONTROL_PERIOD,
-		Endstop_up_PIN_GPIO_Port, Endstop_up_PIN_Pin,
-		Endstop_down_PIN_GPIO_Port, Endstop_down_PIN_Pin,
-		Enable_PIN_GPIO_Port, Enable_PIN_Pin,
-		Step_PIN_GPIO_Port, Step_PIN_Pin,
-		Direction_PIN_GPIO_Port, Direction_PIN_Pin,
-		Alarm_PIN_GPIO_Port, Alarm_PIN_Pin,
-		STEP_PER_REV, STP_CW);
-  easyCat_Init(&ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin);
+  Init_drive();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -140,13 +126,11 @@ int main(void)
   while (1)
   {
       if (timer_elapsed(&control_timer)) {
-    	  easyCat_MainTask(&ethercat);
+    	  easyCat_Read(&ethercat);
 
+    	  easyCat_Write(&ethercat);
       }
-	  led_update_blink(&green_led);
-	  led_update_blink(&yellow_led);
-	  led_update_blink(&red_led);
-
+      Poll4updates();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -231,7 +215,31 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void Init_drive() {
+	timer_init(&control_timer, CONTROL_PERIOD);
+	  led_init(&green_led, Green_Led_PIN_GPIO_Port, Green_Led_PIN_Pin, control_timer.now);
+	  led_init(&yellow_led, Yellow_Led_PIN_GPIO_Port, Yellow_Led_PIN_Pin, control_timer.now);
+	  led_init(&red_led, Red_Led_PIN_GPIO_Port, Red_Led_PIN_Pin, control_timer.now);
+	  error_manager_init(&error_handler, &red_led);
+	  serial_init(&serial, &huart6, SERIAL_INTERRUPT);
+	  encoder_init(&pulley_enc, Enc_A_PIN_GPIO_Port, Enc_A_PIN_Pin, Enc_B_PIN_GPIO_Port, Enc_B_PIN_Pin,
+			  Enc_Z_PIN_GPIO_Port, Enc_Z_PIN_Pin, ENC3_FORWARD, 5000);
+	  stepper_init(&motor, &htim3, CONTROL_PERIOD,
+			Endstop_up_PIN_GPIO_Port, Endstop_up_PIN_Pin,
+			Endstop_down_PIN_GPIO_Port, Endstop_down_PIN_Pin,
+			Enable_PIN_GPIO_Port, Enable_PIN_Pin,
+			Step_PIN_GPIO_Port, Step_PIN_Pin,
+			Direction_PIN_GPIO_Port, Direction_PIN_Pin,
+			Alarm_PIN_GPIO_Port, Alarm_PIN_Pin,
+			STEP_PER_REV, STP_CW);
+	  easyCat_Init(&ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin,&error_handler);
+}
 
+void Poll4updates() {
+	led_update_blink(&green_led);
+	led_update_blink(&yellow_led);
+	led_update_blink(&red_led);
+}
 /* USER CODE END 4 */
 
 /**

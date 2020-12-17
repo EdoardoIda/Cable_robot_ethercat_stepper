@@ -14,6 +14,7 @@ void led_init(led_t* led, GPIO_TypeDef *led_port, uint16_t led_pin, volatile uin
 	led->led_var.last_update_time = *timer_var;
 	led->led_var.blink_period = 0;
 	led->led_var.state = LED_OFF;
+	led_off(led);
 }
 
 void led_on(led_t* led) {
@@ -34,6 +35,7 @@ void led_blink(led_t* led, uint16_t period) {
 }
 
 void led_update_blink(led_t* led) {
+	if (led->led_var.state == LED_BLINKING) {
 	if (*(led->led_var.current_time) - led->led_var.last_update_time >= led->led_var.blink_period) {
 		led->led_var.last_update_time = *(led->led_var.current_time);
 	if ((led->led_par.led_port->ODR & led->led_par.led_pin) == led->led_par.led_pin) {
@@ -41,6 +43,7 @@ void led_update_blink(led_t* led) {
 	}
 	else {
 		led->led_par.led_port->BSRR = led->led_par.led_pin;
+	}
 	}
 	}
 }
