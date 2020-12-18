@@ -36,7 +36,11 @@ void stepper_init(stepperRT_t* stepper, TIM_HandleTypeDef* timer, uint16_t contr
 	stepper->stepper_par.rad_to_steps = 2.0 * M_PI / ((double) step_per_rev);
 
 	stepper->stepper_var.position = 0;
-	stepper->stepper_var.abs_speed = 0;
+	stepper->stepper_var.speed = 0;
+	stepper->stepper_var.torque = 0;
+	stepper->stepper_var.target_position = 0;
+	stepper->stepper_var.target_speed = 0;
+	stepper->stepper_var.target_torque = 0;
 	stepper->stepper_var.direction = STP_FORWARD;
 	stepper->stepper_var.us_period = 0;
 	stepper->stepper_var.us_cur_time = 0;

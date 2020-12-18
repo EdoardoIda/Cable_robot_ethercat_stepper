@@ -57,6 +57,7 @@
 /* USER CODE BEGIN PV */
 Easycat ethercat;
 error_t error_handler;
+state_manager_t state_machine;
 
 
 /* USER CODE END PV */
@@ -64,7 +65,6 @@ error_t error_handler;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void Init_drive();
 
 /* USER CODE END PFP */
 
@@ -107,7 +107,7 @@ int main(void)
   MX_TIM3_Init();
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
-  Init_drive();
+  state_manager_init(&state_machine, &ethercat, &error_handler);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -116,9 +116,12 @@ int main(void)
   while (1)
   {
       if (manager_timer_elapsed()) {
-    	  easyCat_Read(&ethercat);
-
-    	  easyCat_Write(&ethercat);
+    	  easyCat_Read(state_machine.ethercat);
+    	  state_convert_input(&state_machine);
+    	  state_machine.state_transition_function[state_machine.state]();
+    	  state_machine.state_function[state_machine.state]();
+    	  state_convert_output(&state_machine);
+    	  easyCat_Write(state_machine.ethercat);
       }
       manager_poll4updates();
     /* USER CODE END WHILE */
@@ -205,26 +208,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void Init_drive() {
-	timer_init(&control_timer, CONTROL_PERIOD);
-	  led_init(&green_led, Green_Led_PIN_GPIO_Port, Green_Led_PIN_Pin, control_timer.now);
-	  led_init(&yellow_led, Yellow_Led_PIN_GPIO_Port, Yellow_Led_PIN_Pin, control_timer.now);
-	  led_init(&red_led, Red_Led_PIN_GPIO_Port, Red_Led_PIN_Pin, control_timer.now);
-	  error_manager_init(&error_handler, &red_led);
-	  serial_init(&serial, &huart6, SERIAL_INTERRUPT);
-	  encoder_init(&pulley_enc, Enc_A_PIN_GPIO_Port, Enc_A_PIN_Pin, Enc_B_PIN_GPIO_Port, Enc_B_PIN_Pin,
-			  Enc_Z_PIN_GPIO_Port, Enc_Z_PIN_Pin, ENC3_FORWARD, 5000);
-	  stepper_init(&motor, &htim3, CONTROL_PERIOD,
-			Endstop_up_PIN_GPIO_Port, Endstop_up_PIN_Pin,
-			Endstop_down_PIN_GPIO_Port, Endstop_down_PIN_Pin,
-			Enable_PIN_GPIO_Port, Enable_PIN_Pin,
-			Step_PIN_GPIO_Port, Step_PIN_Pin,
-			Direction_PIN_GPIO_Port, Direction_PIN_Pin,
-			Alarm_PIN_GPIO_Port, Alarm_PIN_Pin,
-			STEP_PER_REV, STP_CW);
-	  easyCat_Init(&ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin,&error_handler);
-}
-
 
 /* USER CODE END 4 */
 

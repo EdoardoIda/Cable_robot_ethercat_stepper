@@ -11,7 +11,7 @@
 #include "main.h"
 
 typedef struct {
-	uint8_t empty;
+	uint16_t cable_tension;
 } loadcell_var_t;
 
 typedef struct {
