@@ -82,6 +82,8 @@ void stepper_init(stepperRT_t* stepper, TIM_HandleTypeDef* timer, uint16_t contr
 
 inline void stepper_disable(stepperRT_t* stepper){stepper->stepper_par.enable_port->BSRR = stepper->stepper_par.enable_pin;}
 inline void stepper_enable(stepperRT_t* stepper){stepper->stepper_par.enable_port->BSRR = (uint32_t) stepper->stepper_par.enable_pin << (16U);}
+
+
 inline void stepper_set_update_flag(stepperRT_t* stepper){stepper->stepper_var.update_flag = 1;}
 void stepper_timer_update(stepperRT_t* stepper);
 void stepper_update(stepperRT_t* stepper);
