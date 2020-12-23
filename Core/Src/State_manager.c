@@ -27,7 +27,8 @@ void state_convert_output(state_manager_t * state_manager) {
 	state_manager->ethercat->BufferIn->Cust.actual_position = motor.stepper_var.position;
 	state_manager->ethercat->BufferIn->Cust.actual_position_aux = pulley_enc.enc3c_var.position;
 	state_manager->ethercat->BufferIn->Cust.actual_speed = motor.stepper_var.speed;
-	state_manager->ethercat->BufferIn->Cust.actual_torque = motor.stepper_var.torque;
+	//state_manager->ethercat->BufferIn->Cust.actual_torque = motor.stepper_var.torque;
+	state_manager->ethercat->BufferIn->Cust.actual_torque = loadcell.loadcell_var.cable_tension;
 	state_manager->ethercat->BufferIn->Cust.loadcell_value = loadcell.loadcell_var.cable_tension;
 	state_manager->ethercat->BufferIn->Cust.status_word = state_manager->status;
 }
@@ -94,11 +95,23 @@ void state_idle_function() {
 		 }
 }
 
+void manage_control_change() {
+ if (state_machine.status_request && POSITION_CONTROL_BIT) {
+	 state_machine.control = CONTROL_POSITION;
+ } else if (state_machine.status_request && SPEED_CONTROL_BIT) {
+	 state_machine.control = CONTROL_SPEED;
+ } else if (state_machine.status_request && TORQUE_CONTROL_BIT) {
+	 state_machine.control = CONTROL_TORQUE;
+ }
+}
+
 void state_operational_function() {
 	if (is_alarm_on()) {
 			 go_to_error();
 		 } else {
-
+			 manage_control_change();
+			 state_machine.control_function[state_machine.control]();
+			 motor.stepper_var.update_flag = 1;
 		 }
 }
 
@@ -109,6 +122,7 @@ void state_error_function() {
 void state_init_transition() {
 	if ((state_machine.status_request & IDLE_STATE_BIT) == IDLE_STATE_BIT) {
 				state_machine.state = STATE_IDLE;
+				state_machine.status = state_machine.status | IDLE_STATE_BIT;
 				stepper_disable(&motor);
 				led_blink(&green_led, IDLE_BLINK_PERIOD);
 			}
@@ -117,6 +131,7 @@ void state_init_transition() {
 void state_idle_transition() {
 	if ((state_machine.status_request & OPERATIONAL_STATE_BIT) == OPERATIONAL_STATE_BIT) {
 		state_machine.state = STATE_OPERATIONAL;
+		state_machine.status = ((state_machine.status ^ IDLE_STATE_BIT)| OPERATIONAL_STATE_BIT);
 		stepper_enable(&motor);
 		led_blink(&green_led, OPERATIONAL_BLINK_PERIOD);
 	}
@@ -125,6 +140,7 @@ void state_idle_transition() {
 void state_operational_transition() {
 	if ((state_machine.status_request & IDLE_STATE_BIT) == IDLE_STATE_BIT) {
 			state_machine.state = STATE_IDLE;
+			state_machine.status = ((state_machine.status ^ OPERATIONAL_STATE_BIT)| IDLE_STATE_BIT);
 			led_blink(&green_led, IDLE_BLINK_PERIOD);
 			stepper_disable(&motor);
 		}
@@ -133,24 +149,38 @@ void state_operational_transition() {
 void state_error_transition() {
 	if ((state_machine.status_request & ERROR_RESET_BIT) == ERROR_RESET_BIT) {
 			state_machine.state = STATE_IDLE;
+			state_machine.status = (state_machine.status ^ ERROR_STATE_BIT)| IDLE_STATE_BIT;
 			stepper_disable(&motor);
 		}
 }
 
 void control_position_function() {
-
+	motor.stepper_var.update_flag = 1;
 }
 
 void control_speed_function() {
-
+	motor.stepper_var.target_position = motor.stepper_var.position + (motor.stepper_var.target_speed*CONTROL_PERIOD)/1000;
+	motor.stepper_var.update_flag = 1;
 }
 
 void control_torque_function() {
-
+	motor.stepper_var.update_flag = 1;
 }
 
 void go_to_error() {
 	state_machine.state = STATE_ERROR;
+	switch (state_machine.state) {
+	case STATE_IDLE : {
+		state_machine.status = state_machine.status ^ IDLE_STATE_BIT;
+		break;
+	}
+	case STATE_OPERATIONAL : {
+		state_machine.status = state_machine.status ^ OPERATIONAL_STATE_BIT;
+			break;
+		}
+	default : break;
+	}
+	state_machine.status = state_machine.status | ERROR_STATE_BIT;
 	stepper_disable(&motor);
 	led_blink(&green_led, ERROR_BLINK_PERIOD);
 }

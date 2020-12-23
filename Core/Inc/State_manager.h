@@ -102,6 +102,8 @@ void control_position_function();
 void control_speed_function();
 void control_torque_function();
 
+void manage_control_change();
+
 void go_to_error();
 uint8_t is_alarm_on();
 

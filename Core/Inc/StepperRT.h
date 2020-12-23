@@ -24,6 +24,13 @@ typedef enum
 	STP_FORWARD,
 } stepperRT_dir_t;
 
+typedef enum
+{
+	NOT_HIT = 0U,
+	HIT_UP,
+	HIT_DOWN
+} endstop_hit_t;
+
 typedef struct {
 	int32_t target_position;
 	int32_t position;
@@ -45,6 +52,7 @@ typedef struct {
 	GPIO_TypeDef* up_port;
 	uint16_t down_pin;
 	GPIO_TypeDef* down_port;
+	endstop_hit_t is_hit;
 
 } endstop_t;
 
@@ -87,7 +95,9 @@ inline void stepper_enable(stepperRT_t* stepper){stepper->stepper_par.enable_por
 inline void stepper_set_update_flag(stepperRT_t* stepper){stepper->stepper_var.update_flag = 1;}
 void stepper_timer_update(stepperRT_t* stepper);
 void stepper_update(stepperRT_t* stepper);
+void endstop_update(stepperRT_t* stepper);
 inline void stepper_set_home(stepperRT_t* stepper){stepper->stepper_var.position=0;};
 inline void stepper_set_dir(stepperRT_t* stepper){(stepper->stepper_var.direction == STP_FORWARD) ? (stepper->stepper_par.direction_port->BSRR = (uint32_t)stepper->stepper_par.direction_pin) : (stepper->stepper_par.direction_port->BSRR = (uint32_t)stepper->stepper_par.direction_pin<<(16U));}
 inline void stepper_set_period(stepperRT_t* stepper,uint16_t delta) {(delta>0) ? (stepper->stepper_var.us_period = stepper->stepper_par.step4cycle_max/(2*delta)) : (stepper->stepper_var.us_period =0);};
+
 #endif /* INC_STEPPERRT_H_ */
