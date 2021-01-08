@@ -54,3 +54,4 @@ void serial_message_sent_callback(serial_t *serial){
 void serial_message_received_callback(serial_t *serial){
 	serial->message_received = 1;
 }
+

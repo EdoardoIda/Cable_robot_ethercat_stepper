@@ -7,21 +7,24 @@
 
 #include "Easycat.h"
 
-void easyCat_Init(Easycat *hEC, SPI_HandleTypeDef *hspi, GPIO_TypeDef* SPI_CHIP_SELECT_PORT, uint16_t SPI_CHIP_SELECT) {
+void easyCat_Init(Easycat *hEC, SPI_HandleTypeDef *hspi, GPIO_TypeDef* SPI_CHIP_SELECT_PORT, uint16_t SPI_CHIP_SELECT, error_t *error) {
 	hEC->spi_line = hspi;
 	hEC->SCS_port = SPI_CHIP_SELECT_PORT;
 	hEC->SCS_pin = SPI_CHIP_SELECT;
 	hEC->BufferIn = &Buffer_In_Loc;
 	hEC->BufferOut = &Buffer_Out_Loc;
-	uint8_t flag = easyCat_Setup(hEC);
+	uint8_t flag = easyCat_Setup(hEC, error);
 	while (flag != 1) {
-		(0);
+		error_start(error,ERROR_1);
+				while (1) {
+					led_update_blink(error->error_led);
+				}
 	}
 }
 
 //---------------------------------------------------
 
-uint8_t easyCat_Setup(Easycat *hEC)
+uint8_t easyCat_Setup(Easycat *hEC, error_t *error)
 {
   #define Tout 1000
 
@@ -32,7 +35,7 @@ uint8_t easyCat_Setup(Easycat *hEC)
 
   HAL_Delay(100);
 
-  easyCat_SPIParametersCheck(hEC);
+  easyCat_SPIParametersCheck(hEC,error);
 
   easyCat_SPIWriteRegisterDirect (hEC, RESET_CTL, DIGITAL_RST);
 
@@ -80,11 +83,10 @@ uint8_t easyCat_Setup(Easycat *hEC)
 
 //------------------------------------------------------------------------
 
-unsigned char easyCat_MainTask(Easycat *hEC)
+unsigned char easyCat_Read(Easycat *hEC)
 {
   uint8_t WatchDog = 0;
   uint8_t Operational = 0;
-  unsigned char i;
   ULONG TempLong;
   unsigned char Status;
 
@@ -104,7 +106,7 @@ unsigned char easyCat_MainTask(Easycat *hEC)
 
   if (WatchDog | !Operational)
   {
-    for (i=0; i < TOT_BYTE_NUM_OUT ; i++)
+    for (unsigned char i=0; i < TOT_BYTE_NUM_OUT ; i++)
     {
       hEC->BufferOut->Byte[i] = 0;
     }
@@ -114,11 +116,39 @@ unsigned char easyCat_MainTask(Easycat *hEC)
     easyCat_SPIReadProcRamFifo(hEC);
   }
 
-  easyCat_SPIWriteProcRamFifo(hEC);
-
   if (WatchDog)
   {
     Status |= 0x80;
+  }
+  return Status;
+}
+
+unsigned char easyCat_Write(Easycat *hEC)
+{
+  uint8_t WatchDog = 0;
+  uint8_t Operational = 0;
+  ULONG TempLong;
+  unsigned char Status;
+
+  TempLong.Long = easyCat_SPIReadRegisterIndirect (hEC, WDOG_STATUS, 1);
+  if ((TempLong.Byte[0] & 0x01) == 0x01)
+    WatchDog = 0;
+  else
+    WatchDog = 1;
+
+  TempLong.Long = easyCat_SPIReadRegisterIndirect (hEC, AL_STATUS, 1);
+  Status = TempLong.Byte[0] & 0x0F;
+
+  if (Status == ESM_OP)
+    Operational = 1;
+  else
+    Operational = 0;
+
+  if (WatchDog | !Operational)
+  {
+    Status |= 0x80;
+  } else {
+	easyCat_SPIWriteProcRamFifo(hEC);
   }
   return Status;
 }
@@ -323,18 +353,27 @@ void easyCat_SPIWriteProcRamFifo(Easycat *hEC)
 
 //--------------------------------------------------------------------------------
 
-void easyCat_SPIParametersCheck(Easycat *hEC) {
+void easyCat_SPIParametersCheck(Easycat *hEC, error_t *error) {
 
 
-	while (((hEC->spi_line->Instance->CFG1) & 0x70000000U) != 0x30000000U) {  //check prescaler
-		(0);
+	if (((hEC->spi_line->Instance->CFG1) & 0x70000000U) != 0x30000000U) {  //check prescaler
+		error_start(error,ERROR_1);
+		while (1) {
+			led_update_blink(error->error_led);
+		}
 	}
 
-	while (((hEC->spi_line->Instance->CFG1) & 0x0000001FU) != 0x00000007U) {  //check dimensione dati
-		(0);
+	if (((hEC->spi_line->Instance->CFG1) & 0x0000001FU) != 0x00000007U) {  //check dimensione dati
+		error_start(error,ERROR_2);
+		while (1) {
+			led_update_blink(error->error_led);
+		}
 	}
 
-	while (((hEC->spi_line->Instance->CFG2) & 0x00800000U) != 0x00000000U) {  //check ordine byte
-		(0);
+	if (((hEC->spi_line->Instance->CFG2) & 0x00800000U) != 0x00000000U) {  //check ordine byte
+		error_start(error,ERROR_3);
+				while (1) {
+					led_update_blink(error->error_led);
+				}
 	}
 }

@@ -10,6 +10,7 @@
 
 #include "main.h"
 #include "Cable_robot_winch.h"
+#include "Error_manager.h"
 #define CUSTOM
 
 #if (!defined BYTE_NUM && !defined CUSTOM)
@@ -251,17 +252,18 @@ typedef struct  {
 
 //-------------------------------------------------------------------------------------------------
 
-void easyCat_Init(Easycat *hEC, SPI_HandleTypeDef *hspi, GPIO_TypeDef* SPI_CHIP_SELECT_PORT, uint16_t SPI_CHIP_SELECT);
+void easyCat_Init(Easycat *hEC, SPI_HandleTypeDef *hspi, GPIO_TypeDef* SPI_CHIP_SELECT_PORT, uint16_t SPI_CHIP_SELECT, error_t *error);
                                                                        //imposta la comunicazione, richiedendo in ingresso la struttura handler
                                                                        //e le informazioni relative alla linea SPI, al chip select e alla modalità
                                                                        //di comunicazione
 
-unsigned char easyCat_MainTask(Easycat *hEC);          //accede alla memoria di master input e output presente sul chip LAN,
+unsigned char easyCat_Read(Easycat *hEC);          //accede alla memoria di master input e output presente sul chip LAN,
                                                              //in modalità asincrona è da chiamare ciclicamente nel main
+unsigned char easyCat_Write(Easycat *hEC);
 
-uint8_t easyCat_Setup(Easycat *hEC); //inizializza la comunicazione, è chiamata all'interno del setup
+uint8_t easyCat_Setup(Easycat *hEC, error_t *error); //inizializza la comunicazione, è chiamata all'interno del setup
 
-void easyCat_SPIParametersCheck(Easycat *hEC);  //verifica i parametri di comunicazione SPI
+void easyCat_SPIParametersCheck(Easycat *hEC, error_t *error);  //verifica i parametri di comunicazione SPI
                                                       //(prescaler, dimensione pacchetti di dati, ordine byte)
 
 void easyCat_SPIWriteRegisterDirect(Easycat *hEC, unsigned short Address, unsigned long DataOut);  //Scrittura di registri direttamente accessibili
