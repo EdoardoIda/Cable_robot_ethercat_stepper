@@ -28,8 +28,8 @@ void state_convert_output(state_manager_t * state_manager) {
 	state_manager->ethercat->BufferIn->Cust.actual_position_aux = pulley_enc.enc3c_var.position;
 	state_manager->ethercat->BufferIn->Cust.actual_speed = motor.stepper_var.speed;
 	//state_manager->ethercat->BufferIn->Cust.actual_torque = motor.stepper_var.torque;
-	state_manager->ethercat->BufferIn->Cust.actual_torque = loadcell.loadcell_var.cable_tension;
-	state_manager->ethercat->BufferIn->Cust.loadcell_value = loadcell.loadcell_var.cable_tension;
+	state_manager->ethercat->BufferIn->Cust.actual_torque = loadcell_get_value(&loadcell);
+	state_manager->ethercat->BufferIn->Cust.loadcell_value = loadcell_get_value(&loadcell);
 	state_manager->ethercat->BufferIn->Cust.status_word = state_manager->status;
 }
 
@@ -44,6 +44,7 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 	serial_init(&serial, &huart6, SERIAL_INTERRUPT);
 	encoder_init(&pulley_enc, Enc_A_PIN_GPIO_Port, Enc_A_PIN_Pin, Enc_B_PIN_GPIO_Port, Enc_B_PIN_Pin,
 				  Enc_Z_PIN_GPIO_Port, Enc_Z_PIN_Pin, ENC3_FORWARD, 5000);
+	loadcell_init(&loadcell,&hadc3,1);
 	stepper_init(&motor, &htim3, CONTROL_PERIOD,
 				Endstop_up_PIN_GPIO_Port, Endstop_up_PIN_Pin,
 				Endstop_down_PIN_GPIO_Port, Endstop_down_PIN_Pin,

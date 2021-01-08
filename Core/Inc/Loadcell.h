@@ -15,7 +15,8 @@ typedef struct {
 } loadcell_var_t;
 
 typedef struct {
-	uint8_t empty;
+	ADC_HandleTypeDef* adc_handle;
+	uint16_t voltage_to_tension;
 } loadcell_par_t;
 
 typedef struct {
@@ -23,6 +24,7 @@ typedef struct {
 	loadcell_var_t loadcell_var;
 } loadcell_t;
 
-void loadcell_init();
+void loadcell_init(loadcell_t *loadcell, ADC_HandleTypeDef *hadc, uint16_t v_to_N);
+uint16_t loadcell_get_value(loadcell_t *loadcell);
 
 #endif /* INC_LOADCELL_H_ */
