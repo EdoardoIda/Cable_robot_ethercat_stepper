@@ -1,0 +1,157 @@
+
+Easy Configurator, configuration engine  V_3_2 
+
+log created on Tue Dec 01 10:58:21 2020
+
+Analyzing the project file
+
+Easy Configurator project Cable_robot_winch.prj
+
+OUTPUTS_TAG
+Line 4 --- control_word            uint16_t
+Line 5 --- target_position         int32_t
+Line 6 --- target_speed            int32_t
+Line 7 --- target_torque           int16_t
+INPUTS_TAG
+Line 9 --- status_word             uint16_t
+Line 10 --- loadcell_value          uint16_t
+Line 11 --- actual_position         int32_t
+Line 12 --- actual_speed            int32_t
+Line 13 --- actual_torque           int16_t
+Line 14 --- actual_position_aux     int16_t
+INFO_TAG
+0x0000079A
+IRMALAB
+0xDEADBEEF
+0x00000001
+Cable_robot_winch
+Cable_robot_winch
+END_TAG
+
+The Cable_robot_winch.prj configuration file is correct
+
+ByteNumOut 12
+ByteNumIn  16
+PdoNumOut  4
+PdoNumIn   6
+
+Creating the Cable_robot_winch.xml file
+
+PROJECT_TAG   Cable_robot_winch.prj
+VENDOID_TAG   0000079A
+VEN_NAM_TAG   IRMALAB
+PRO_COD_TAG   DEADBEEF
+REVISIO_TAG   00000001
+DEV_NAM_TAG   Cable_robot_winch
+DEV_NAM_TAG   Cable_robot_winch
+
+FIRST_TAG
+
+Output entries
+          <Entry>
+            <Index>#x5</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_position</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x5</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>target_speed</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x5</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>control_word</Name>
+            <DataType>UINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x5</Index>
+            <SubIndex>4</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>target_torque</Name>
+            <DataType>INT</DataType>
+          </Entry>
+
+SECOND_TAG
+
+Input entries
+          <Entry>
+            <Index>#x6</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>actual_position</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>32</BitLen>
+            <Name>actual_speed</Name>
+            <DataType>DINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>status_word</Name>
+            <DataType>UINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6</Index>
+            <SubIndex>4</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>loadcell_value</Name>
+            <DataType>UINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6</Index>
+            <SubIndex>5</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>actual_torque</Name>
+            <DataType>INT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6</Index>
+            <SubIndex>6</SubIndex>
+            <BitLen>16</BitLen>
+            <Name>actual_position_aux</Name>
+            <DataType>INT</DataType>
+          </Entry>
+
+LAST_TAG
+
+The Cable_robot_winch.xml file has been created
+
+Creating the Cable_robot_winch.h file
+
+#define CUST_BYTE_NUM_OUT	12
+#define CUST_BYTE_NUM_IN	16
+#define TOT_BYTE_NUM_ROUND_OUT	12
+#define TOT_BYTE_NUM_ROUND_IN	16
+
+
+Output entries
+		int32_t     target_position;
+		int32_t     target_speed;
+		uint16_t    control_word;
+		int16_t     target_torque;
+
+Input entries
+		int32_t     actual_position;
+		int32_t     actual_speed;
+		uint16_t    status_word;
+		uint16_t    loadcell_value;
+		int16_t     actual_torque;
+		int16_t     actual_position_aux;
+
+The Cable_robot_winch.h file has been created
+
+Creating the Cable_robot_winch.bin file
+
+
+The Cable_robot_winch.bin file has been created
