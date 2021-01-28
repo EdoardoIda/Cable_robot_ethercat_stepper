@@ -28,12 +28,15 @@
 #define OPERATIONAL_BLINK_PERIOD 500
 #define ERROR_BLINK_PERIOD 250
 
+#define DEFAULT_PID_FREQ_FILTER 2*M_PI*100;
+
 #include "main.h"
 #include "adc.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+
 
 #include "Led.h"
 #include "Control_timer.h"
@@ -43,6 +46,7 @@
 #include "Loadcell.h"
 #include "Easycat.h"
 #include "Error_manager.h"
+#include "pid.h"
 
 control_timer_t control_timer;
 led_t green_led,
@@ -52,6 +56,7 @@ serial_t serial;
 enc3c_t pulley_enc;
 stepperRT_t motor;
 loadcell_t loadcell;
+pid_t tension_pid;
 
 typedef enum
 {

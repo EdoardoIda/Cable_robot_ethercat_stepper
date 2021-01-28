@@ -20,8 +20,14 @@ typedef struct {
 } loadcell_par_t;
 
 typedef struct {
+	uint16_t previous_value;
+	uint16_t beta_par;
+} low_pass_filter_t;
+
+typedef struct {
 	loadcell_par_t loadcell_par;
 	loadcell_var_t loadcell_var;
+	low_pass_filter_t loadcell_filter;
 } loadcell_t;
 
 void loadcell_init(loadcell_t *loadcell, ADC_HandleTypeDef *hadc, uint16_t v_to_N);

@@ -105,3 +105,14 @@ void stepper_update(stepperRT_t* stepper) {
  }
  stepper_set_dir(stepper);
 }
+
+void stepper_set_period(stepperRT_t* stepper,uint16_t delta) {
+	if (delta>0) {
+		if (2*delta > stepper->stepper_par.step4cycle_max) {
+			stepper->stepper_var.us_period = 1;
+		} else {
+			stepper->stepper_var.us_period = stepper->stepper_par.step4cycle_max/(2*delta);
+		}
+	} else {
+		stepper->stepper_var.us_period =0;
+	}

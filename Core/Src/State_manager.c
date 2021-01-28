@@ -54,6 +54,8 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 				Alarm_PIN_GPIO_Port, Alarm_PIN_Pin,
 				STEP_PER_REV, STP_CW);
 	easyCat_Init(ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin,error_handler);
+	pid_init(&tension_pid, double Kp, 0.0, 0.0, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
+	tension_pid
 
 	state_manager->control = CONTROL_POSITION;
 	state_manager->state = STATE_INIT;
@@ -112,7 +114,6 @@ void state_operational_function() {
 		 } else {
 			 manage_control_change();
 			 state_machine.control_function[state_machine.control]();
-			 motor.stepper_var.update_flag = 1;
 		 }
 }
 
@@ -165,6 +166,8 @@ void control_speed_function() {
 }
 
 void control_torque_function() {
+	uint16_t actual_tension = loadcell_get_value(&loadcell);
+
 	motor.stepper_var.update_flag = 1;
 }
 

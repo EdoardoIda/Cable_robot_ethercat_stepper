@@ -55,7 +55,8 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(Yellow_Led_PIN_GPIO_Port, Yellow_Led_PIN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, Enable_PIN_Pin|Direction_PIN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, Direction_PIN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, Enable_PIN_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOG, Red_Led_PIN_Pin|USB_PowerSwitchOn_Pin|Green_Led_PIN_Pin, GPIO_PIN_RESET);
