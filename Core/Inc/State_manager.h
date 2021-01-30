@@ -28,7 +28,7 @@
 #define OPERATIONAL_BLINK_PERIOD 500
 #define ERROR_BLINK_PERIOD 250
 
-#define DEFAULT_PID_FREQ_FILTER 2*M_PI*100;
+#define DEFAULT_PID_FREQ_FILTER 2*M_PI*100
 
 #include "main.h"
 #include "adc.h"
@@ -56,7 +56,7 @@ serial_t serial;
 enc3c_t pulley_enc;
 stepperRT_t motor;
 loadcell_t loadcell;
-pid_t tension_pid;
+my_pid_t tension_pid;
 
 typedef enum
 {
@@ -73,10 +73,18 @@ typedef enum
 	CONTROL_TORQUE
 } control_t;
 
+typedef struct
+{
+	int32_t position;
+	int32_t speed;
+	int16_t torque;
+} target_t;
+
 typedef void (*fun_pointer_t)();
 
 typedef struct {
 	state_t state;
+	target_t target;
 	control_t control;
 	uint16_t status;
 	uint16_t status_request;

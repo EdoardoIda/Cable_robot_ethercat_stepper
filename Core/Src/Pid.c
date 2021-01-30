@@ -7,7 +7,7 @@
 
 #include "Pid.h"
 
-void pid_init(pid_t *pid, double Kp, double Ki, double Kd, uint16_t control_period_ms, double N) {
+void pid_init(my_pid_t *pid, double Kp, double Ki, double Kd, uint16_t control_period_ms, double N) {
 	double Ts = (double)control_period_ms/1000.0;
 	double b0 = Kp*(1.0+N*Ts)+Ki*Ts*(1+N*Ts)+Kd*N;
 	double b1 = -(Kp*(2+N*Ts)+Ki*Ts+2*Kd*N);
@@ -31,7 +31,7 @@ void pid_init(pid_t *pid, double Kp, double Ki, double Kd, uint16_t control_peri
 
 }
 
-double pid_update(pid_t* pid, double e) {
+double pid_update(my_pid_t* pid, double e) {
 
 	pid->pid_var.e[2] = pid->pid_var.e[1];
 	pid->pid_var.e[1] = pid->pid_var.e[0];

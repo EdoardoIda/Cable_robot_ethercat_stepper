@@ -18,9 +18,9 @@ void manager_poll4updates() {
 
 void state_convert_input(state_manager_t * state_manager) {
 	state_manager->status_request = state_manager->ethercat->BufferOut->Cust.control_word;
-	motor.stepper_var.target_position = state_manager->ethercat->BufferOut->Cust.target_position;
-	motor.stepper_var.target_speed = state_manager->ethercat->BufferOut->Cust.target_speed;
-	motor.stepper_var.target_torque = state_manager->ethercat->BufferOut->Cust.target_torque;
+	state_manager->target.position = state_manager->ethercat->BufferOut->Cust.target_position;
+	state_manager->target.speed = state_manager->ethercat->BufferOut->Cust.target_speed;
+	state_manager->target.torque = state_manager->ethercat->BufferOut->Cust.target_torque;
 }
 
 void state_convert_output(state_manager_t * state_manager) {
@@ -28,7 +28,7 @@ void state_convert_output(state_manager_t * state_manager) {
 	state_manager->ethercat->BufferIn->Cust.actual_position_aux = pulley_enc.enc3c_var.position;
 	state_manager->ethercat->BufferIn->Cust.actual_speed = motor.stepper_var.speed;
 	//state_manager->ethercat->BufferIn->Cust.actual_torque = motor.stepper_var.torque;
-	state_manager->ethercat->BufferIn->Cust.actual_torque = loadcell_get_value(&loadcell);
+	state_manager->ethercat->BufferIn->Cust.actual_torque = state_manager->target.torque;
 	state_manager->ethercat->BufferIn->Cust.loadcell_value = loadcell_get_value(&loadcell);
 	state_manager->ethercat->BufferIn->Cust.status_word = state_manager->status;
 }
@@ -54,8 +54,7 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 				Alarm_PIN_GPIO_Port, Alarm_PIN_Pin,
 				STEP_PER_REV, STP_CW);
 	easyCat_Init(ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin,error_handler);
-	pid_init(&tension_pid, double Kp, 0.0, 0.0, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
-	tension_pid
+	pid_init(&tension_pid, 0.01, 0.0, 0.0, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
 
 	state_manager->control = CONTROL_POSITION;
 	state_manager->state = STATE_INIT;
@@ -63,6 +62,10 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 	state_manager->error_handler = error_handler;
 	state_manager->status = 0;
 	state_manager->status_request = IDLE_STATE_BIT;
+	state_manager->target.position = 0;
+	state_manager->target.speed = 0;
+	state_manager->target.torque = 0;
+
 
 	state_manager->state_function[STATE_INIT] = &state_init_function;
 	state_manager->state_function[STATE_IDLE] = &state_idle_function;
@@ -99,11 +102,11 @@ void state_idle_function() {
 }
 
 void manage_control_change() {
- if (state_machine.status_request && POSITION_CONTROL_BIT) {
+ if (state_machine.status_request & POSITION_CONTROL_BIT) {
 	 state_machine.control = CONTROL_POSITION;
- } else if (state_machine.status_request && SPEED_CONTROL_BIT) {
+ } else if (state_machine.status_request & SPEED_CONTROL_BIT) {
 	 state_machine.control = CONTROL_SPEED;
- } else if (state_machine.status_request && TORQUE_CONTROL_BIT) {
+ } else if (state_machine.status_request & TORQUE_CONTROL_BIT) {
 	 state_machine.control = CONTROL_TORQUE;
  }
 }
@@ -157,17 +160,23 @@ void state_error_transition() {
 }
 
 void control_position_function() {
+	motor.stepper_var.target_position = state_machine.target.position;
 	motor.stepper_var.update_flag = 1;
 }
 
 void control_speed_function() {
-	motor.stepper_var.target_position = motor.stepper_var.position + (motor.stepper_var.target_speed*CONTROL_PERIOD)/1000;
+	motor.stepper_var.subposition = motor.stepper_var.subposition+ ((float)(state_machine.target.speed*CONTROL_PERIOD))/1000.0;
+	if (motor.stepper_var.subposition>=1.0 || motor.stepper_var.subposition<=-1.0) {
+	motor.stepper_var.target_position = motor.stepper_var.position + ((int32_t)trunc(motor.stepper_var.subposition));
 	motor.stepper_var.update_flag = 1;
+	motor.stepper_var.subposition = motor.stepper_var.subposition-trunc(motor.stepper_var.subposition);
+	}
+
 }
 
 void control_torque_function() {
 	uint16_t actual_tension = loadcell_get_value(&loadcell);
-
+	motor.stepper_var.target_position = motor.stepper_var.position + (int32_t)pid_update(&tension_pid, (double)(state_machine.target.torque-actual_tension) );
 	motor.stepper_var.update_flag = 1;
 }
 

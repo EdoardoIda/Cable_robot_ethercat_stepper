@@ -34,16 +34,14 @@ typedef enum
 typedef struct {
 	int32_t target_position;
 	int32_t position;
-	int32_t target_speed;
 	int32_t speed;
-	int16_t target_torque;
-	int16_t torque;
 	stepperRT_dir_t direction;
 	uint32_t us_period;
 	uint32_t temp_us_period;
 	uint32_t us_cur_time;
 	uint32_t us_last_time;
 	uint8_t update_flag;
+	float subposition;
 } stepperRT_var_t;
 
 typedef struct {

@@ -17,8 +17,8 @@ typedef enum
 } enc3c_dir_t;
 
 typedef struct {
-	uint8_t previous_state;
-	int32_t position;
+	volatile uint8_t previous_state;
+	volatile int32_t position;
 } enc3c_var_t;
 
 typedef struct {
@@ -31,7 +31,7 @@ typedef struct {
 	uint8_t bitshiftA;
 	uint8_t bitshiftB;
 	uint8_t bitshiftC;
-	enc3c_dir_t dir;
+	int32_t dir;
 	uint32_t count_per_rev;
 } enc3c_par_t;
 

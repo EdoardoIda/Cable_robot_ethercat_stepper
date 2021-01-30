@@ -136,7 +136,7 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PGPin PGPin */
   GPIO_InitStruct.Pin = Enc_A_PIN_Pin|Enc_B_PIN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 

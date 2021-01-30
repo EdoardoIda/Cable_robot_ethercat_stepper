@@ -26,9 +26,9 @@ typedef struct {
 typedef struct {
 	pid_var_t pid_var;
 	pid_par_t pid_par;
-}  pid_t;
+}  my_pid_t;
 
-void pid_init(pid_t* pid, double Kp, double Ki, double Kd, uint16_t control_period_ms, double N);
-double pid_update(pid_t* pid, double e);
+void pid_init(my_pid_t* pid, double Kp, double Ki, double Kd, uint16_t control_period_ms, double N);
+double pid_update(my_pid_t* pid, double e);
 
 #endif /* INC_PID_H_ */
