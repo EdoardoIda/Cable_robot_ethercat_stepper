@@ -28,11 +28,10 @@ void state_convert_output(state_manager_t * state_manager) {
 	state_manager->ethercat->BufferIn->Cust.actual_position_aux = pulley_enc.enc3c_var.position;
 	state_manager->ethercat->BufferIn->Cust.actual_speed = motor.stepper_var.speed;
 	//state_manager->ethercat->BufferIn->Cust.actual_torque = motor.stepper_var.torque;
-	state_manager->ethercat->BufferIn->Cust.actual_torque = state_manager->target.torque;
 	state_manager->ethercat->BufferIn->Cust.loadcell_value = loadcell_get_value(&loadcell);
+	state_manager->ethercat->BufferIn->Cust.actual_torque = state_manager->ethercat->BufferIn->Cust.loadcell_value;
 	state_manager->ethercat->BufferIn->Cust.status_word = state_manager->status;
 }
-
 
 
 void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error_t *error_handler) {
@@ -54,7 +53,7 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 				Alarm_PIN_GPIO_Port, Alarm_PIN_Pin,
 				STEP_PER_REV, STP_CW);
 	easyCat_Init(ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin,error_handler);
-	pid_init(&tension_pid, 0.01, 0.0, 0.0, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
+	pid_init(&tension_pid, 0.02, 0.0, 0.0, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
 
 	state_manager->control = CONTROL_POSITION;
 	state_manager->state = STATE_INIT;
