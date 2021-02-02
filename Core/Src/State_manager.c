@@ -81,6 +81,10 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 	state_manager->control_function[CONTROL_SPEED] = &control_speed_function;
 	state_manager->control_function[CONTROL_TORQUE] = &control_torque_function;
 
+	state_manager->control_transition_function[CONTROL_POSITION] = &control_position_transition;
+	state_manager->control_transition_function[CONTROL_SPEED] = &control_speed_transition;
+	state_manager->control_transition_function[CONTROL_TORQUE] = &control_torque_transition;
+
 	state_manager->state_transition_function[state_manager->state]();
 	state_manager->state_function[state_manager->state]();
 }
@@ -101,27 +105,49 @@ void state_idle_function() {
 		 }
 }
 
-void manage_control_change() {
- if (state_machine.status_request & POSITION_CONTROL_BIT) {
-	 state_machine.control = CONTROL_POSITION;
- } else if (state_machine.status_request & SPEED_CONTROL_BIT) {
-	 state_machine.control = CONTROL_SPEED;
- } else if (state_machine.status_request & TORQUE_CONTROL_BIT) {
-	 state_machine.control = CONTROL_TORQUE;
- }
-}
-
 void state_operational_function() {
 	if (is_alarm_on()) {
 			 go_to_error();
 		 } else {
-			 manage_control_change();
+			 state_machine.control_transition_function[state_machine.control]();
 			 state_machine.control_function[state_machine.control]();
 		 }
 }
 
 void state_error_function() {
 
+}
+
+void control_position_transition() {
+	if ((state_machine.status_request & SPEED_CONTROL_BIT) == SPEED_CONTROL_BIT) {
+		state_machine.control = CONTROL_SPEED;
+		state_machine.status = ((state_machine.status ^ POSITION_CONTROL_BIT)| SPEED_CONTROL_BIT);
+	} else if ((state_machine.status_request & TORQUE_CONTROL_BIT) == TORQUE_CONTROL_BIT) {
+		state_machine.control = CONTROL_TORQUE;
+		state_machine.status = ((state_machine.status ^ POSITION_CONTROL_BIT)| TORQUE_CONTROL_BIT);
+	}
+}
+
+void control_speed_transition() {
+	if ((state_machine.status_request & POSITION_CONTROL_BIT) == POSITION_CONTROL_BIT) {
+			state_machine.control = CONTROL_POSITION;
+			state_machine.status = ((state_machine.status ^ SPEED_CONTROL_BIT)| POSITION_CONTROL_BIT);
+
+		} else if ((state_machine.status_request & TORQUE_CONTROL_BIT) == TORQUE_CONTROL_BIT) {
+			state_machine.control = CONTROL_TORQUE;
+			state_machine.status = ((state_machine.status ^ SPEED_CONTROL_BIT)| TORQUE_CONTROL_BIT);
+		}
+}
+
+void control_torque_transition() {
+	if ((state_machine.status_request & SPEED_CONTROL_BIT) == SPEED_CONTROL_BIT) {
+			state_machine.control = CONTROL_SPEED;
+			state_machine.status = ((state_machine.status ^ TORQUE_CONTROL_BIT)| SPEED_CONTROL_BIT);
+
+		} else if ((state_machine.status_request & POSITION_CONTROL_BIT) == POSITION_CONTROL_BIT) {
+			state_machine.control = CONTROL_POSITION;
+			state_machine.status = ((state_machine.status ^ TORQUE_CONTROL_BIT)| POSITION_CONTROL_BIT);
+		}
 }
 
 void state_init_transition() {

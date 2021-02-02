@@ -89,6 +89,7 @@ typedef struct {
 	uint16_t status;
 	uint16_t status_request;
 	fun_pointer_t state_transition_function[NUMBER_OF_STATES];
+	fun_pointer_t control_transition_function[NUMBER_OF_CONTROL];
 	fun_pointer_t state_function[NUMBER_OF_STATES];
 	fun_pointer_t control_function[NUMBER_OF_CONTROL];
 	Easycat *ethercat;
@@ -111,11 +112,13 @@ void state_idle_transition();
 void state_operational_transition();
 void state_error_transition();
 
+void control_position_transition();
+void control_speed_transition();
+void control_torque_transition();
+
 void control_position_function();
 void control_speed_function();
 void control_torque_function();
-
-void manage_control_change();
 
 void go_to_error();
 uint8_t is_alarm_on();
