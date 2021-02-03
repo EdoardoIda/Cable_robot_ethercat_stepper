@@ -28,8 +28,8 @@ void state_convert_output(state_manager_t * state_manager) {
 	state_manager->ethercat->BufferIn->Cust.actual_position_aux = pulley_enc.enc3c_var.position;
 	state_manager->ethercat->BufferIn->Cust.actual_speed = motor.stepper_var.speed;
 	//state_manager->ethercat->BufferIn->Cust.actual_torque = motor.stepper_var.torque;
-	state_manager->ethercat->BufferIn->Cust.loadcell_value = loadcell_get_value(&loadcell);
-	state_manager->ethercat->BufferIn->Cust.actual_torque = state_manager->ethercat->BufferIn->Cust.loadcell_value;
+	state_manager->ethercat->BufferIn->Cust.loadcell_value = state_manager->ethercat->BufferOut->Cust.target_torque;
+	state_manager->ethercat->BufferIn->Cust.actual_torque = loadcell_get_value(&loadcell);
 	state_manager->ethercat->BufferIn->Cust.status_word = state_manager->status;
 }
 
@@ -53,7 +53,7 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 				Alarm_PIN_GPIO_Port, Alarm_PIN_Pin,
 				STEP_PER_REV, STP_CW);
 	easyCat_Init(ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin,error_handler);
-	pid_init(&tension_pid, 0.02, 0.0, 0.0, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
+	pid_init(&tension_pid, 0.01, 0.002, 0.00001, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
 
 	state_manager->control = CONTROL_POSITION;
 	state_manager->state = STATE_INIT;
@@ -200,8 +200,15 @@ void control_speed_function() {
 }
 
 void control_torque_function() {
-	uint16_t actual_tension = loadcell_get_value(&loadcell);
-	motor.stepper_var.target_position = motor.stepper_var.position + (int32_t)pid_update(&tension_pid, (double)(state_machine.target.torque-actual_tension) );
+	int16_t actual_tension = (int16_t)loadcell_get_value(&loadcell);
+	int32_t delta_position = (int32_t)pid_update(&tension_pid, (double)(state_machine.target.torque-actual_tension));
+	if (abs(delta_position)<5) {
+	motor.stepper_var.target_position = motor.stepper_var.position + delta_position;
+	} else if (delta_position>0){
+		motor.stepper_var.target_position = motor.stepper_var.position + 5;
+	} else {
+		motor.stepper_var.target_position = motor.stepper_var.position - 5;
+	}
 	motor.stepper_var.update_flag = 1;
 }
 
