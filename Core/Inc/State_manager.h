@@ -28,12 +28,15 @@
 #define OPERATIONAL_BLINK_PERIOD 500
 #define ERROR_BLINK_PERIOD 250
 
+#define DEFAULT_PID_FREQ_FILTER 2*M_PI*100
+
 #include "main.h"
 #include "adc.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+
 
 #include "Led.h"
 #include "Control_timer.h"
@@ -43,6 +46,7 @@
 #include "Loadcell.h"
 #include "Easycat.h"
 #include "Error_manager.h"
+#include "pid.h"
 
 control_timer_t control_timer;
 led_t green_led,
@@ -52,6 +56,7 @@ serial_t serial;
 enc3c_t pulley_enc;
 stepperRT_t motor;
 loadcell_t loadcell;
+my_pid_t tension_pid;
 
 typedef enum
 {
@@ -68,14 +73,23 @@ typedef enum
 	CONTROL_TORQUE
 } control_t;
 
+typedef struct
+{
+	int32_t position;
+	int32_t speed;
+	int16_t torque;
+} target_t;
+
 typedef void (*fun_pointer_t)();
 
 typedef struct {
 	state_t state;
+	target_t target;
 	control_t control;
 	uint16_t status;
 	uint16_t status_request;
 	fun_pointer_t state_transition_function[NUMBER_OF_STATES];
+	fun_pointer_t control_transition_function[NUMBER_OF_CONTROL];
 	fun_pointer_t state_function[NUMBER_OF_STATES];
 	fun_pointer_t control_function[NUMBER_OF_CONTROL];
 	Easycat *ethercat;
@@ -98,11 +112,13 @@ void state_idle_transition();
 void state_operational_transition();
 void state_error_transition();
 
+void control_position_transition();
+void control_speed_transition();
+void control_torque_transition();
+
 void control_position_function();
 void control_speed_function();
 void control_torque_function();
-
-void manage_control_change();
 
 void go_to_error();
 uint8_t is_alarm_on();

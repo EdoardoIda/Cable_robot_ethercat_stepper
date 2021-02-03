@@ -335,7 +335,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 void HAL_ADC_ConvCptlCallback(ADC_HandleTypeDef* hadc) {
-	uint32_t culo = 1;
+
 }
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

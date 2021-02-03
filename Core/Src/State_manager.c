@@ -18,9 +18,9 @@ void manager_poll4updates() {
 
 void state_convert_input(state_manager_t * state_manager) {
 	state_manager->status_request = state_manager->ethercat->BufferOut->Cust.control_word;
-	motor.stepper_var.target_position = state_manager->ethercat->BufferOut->Cust.target_position;
-	motor.stepper_var.target_speed = state_manager->ethercat->BufferOut->Cust.target_speed;
-	motor.stepper_var.target_torque = state_manager->ethercat->BufferOut->Cust.target_torque;
+	state_manager->target.position = state_manager->ethercat->BufferOut->Cust.target_position;
+	state_manager->target.speed = state_manager->ethercat->BufferOut->Cust.target_speed;
+	state_manager->target.torque = state_manager->ethercat->BufferOut->Cust.target_torque;
 }
 
 void state_convert_output(state_manager_t * state_manager) {
@@ -28,11 +28,10 @@ void state_convert_output(state_manager_t * state_manager) {
 	state_manager->ethercat->BufferIn->Cust.actual_position_aux = pulley_enc.enc3c_var.position;
 	state_manager->ethercat->BufferIn->Cust.actual_speed = motor.stepper_var.speed;
 	//state_manager->ethercat->BufferIn->Cust.actual_torque = motor.stepper_var.torque;
+	state_manager->ethercat->BufferIn->Cust.loadcell_value = state_manager->ethercat->BufferOut->Cust.target_torque;
 	state_manager->ethercat->BufferIn->Cust.actual_torque = loadcell_get_value(&loadcell);
-	state_manager->ethercat->BufferIn->Cust.loadcell_value = loadcell_get_value(&loadcell);
 	state_manager->ethercat->BufferIn->Cust.status_word = state_manager->status;
 }
-
 
 
 void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error_t *error_handler) {
@@ -43,7 +42,7 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 	error_manager_init(error_handler, &red_led);
 	serial_init(&serial, &huart6, SERIAL_INTERRUPT);
 	encoder_init(&pulley_enc, Enc_A_PIN_GPIO_Port, Enc_A_PIN_Pin, Enc_B_PIN_GPIO_Port, Enc_B_PIN_Pin,
-				  Enc_Z_PIN_GPIO_Port, Enc_Z_PIN_Pin, ENC3_FORWARD, 5000);
+				  Enc_Z_PIN_GPIO_Port, Enc_Z_PIN_Pin, ENC3_FORWARD, 10000);
 	loadcell_init(&loadcell,&hadc3,1);
 	stepper_init(&motor, &htim3, CONTROL_PERIOD,
 				Endstop_up_PIN_GPIO_Port, Endstop_up_PIN_Pin,
@@ -54,6 +53,7 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 				Alarm_PIN_GPIO_Port, Alarm_PIN_Pin,
 				STEP_PER_REV, STP_CW);
 	easyCat_Init(ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin,error_handler);
+	pid_init(&tension_pid, 0.01, 0.002, 0.00001, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
 
 	state_manager->control = CONTROL_POSITION;
 	state_manager->state = STATE_INIT;
@@ -61,6 +61,10 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 	state_manager->error_handler = error_handler;
 	state_manager->status = 0;
 	state_manager->status_request = IDLE_STATE_BIT;
+	state_manager->target.position = 0;
+	state_manager->target.speed = 0;
+	state_manager->target.torque = 0;
+
 
 	state_manager->state_function[STATE_INIT] = &state_init_function;
 	state_manager->state_function[STATE_IDLE] = &state_idle_function;
@@ -75,6 +79,10 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 	state_manager->control_function[CONTROL_POSITION] = &control_position_function;
 	state_manager->control_function[CONTROL_SPEED] = &control_speed_function;
 	state_manager->control_function[CONTROL_TORQUE] = &control_torque_function;
+
+	state_manager->control_transition_function[CONTROL_POSITION] = &control_position_transition;
+	state_manager->control_transition_function[CONTROL_SPEED] = &control_speed_transition;
+	state_manager->control_transition_function[CONTROL_TORQUE] = &control_torque_transition;
 
 	state_manager->state_transition_function[state_manager->state]();
 	state_manager->state_function[state_manager->state]();
@@ -96,28 +104,49 @@ void state_idle_function() {
 		 }
 }
 
-void manage_control_change() {
- if (state_machine.status_request && POSITION_CONTROL_BIT) {
-	 state_machine.control = CONTROL_POSITION;
- } else if (state_machine.status_request && SPEED_CONTROL_BIT) {
-	 state_machine.control = CONTROL_SPEED;
- } else if (state_machine.status_request && TORQUE_CONTROL_BIT) {
-	 state_machine.control = CONTROL_TORQUE;
- }
-}
-
 void state_operational_function() {
 	if (is_alarm_on()) {
 			 go_to_error();
 		 } else {
-			 manage_control_change();
+			 state_machine.control_transition_function[state_machine.control]();
 			 state_machine.control_function[state_machine.control]();
-			 motor.stepper_var.update_flag = 1;
 		 }
 }
 
 void state_error_function() {
 
+}
+
+void control_position_transition() {
+	if ((state_machine.status_request & SPEED_CONTROL_BIT) == SPEED_CONTROL_BIT) {
+		state_machine.control = CONTROL_SPEED;
+		state_machine.status = ((state_machine.status ^ POSITION_CONTROL_BIT)| SPEED_CONTROL_BIT);
+	} else if ((state_machine.status_request & TORQUE_CONTROL_BIT) == TORQUE_CONTROL_BIT) {
+		state_machine.control = CONTROL_TORQUE;
+		state_machine.status = ((state_machine.status ^ POSITION_CONTROL_BIT)| TORQUE_CONTROL_BIT);
+	}
+}
+
+void control_speed_transition() {
+	if ((state_machine.status_request & POSITION_CONTROL_BIT) == POSITION_CONTROL_BIT) {
+			state_machine.control = CONTROL_POSITION;
+			state_machine.status = ((state_machine.status ^ SPEED_CONTROL_BIT)| POSITION_CONTROL_BIT);
+
+		} else if ((state_machine.status_request & TORQUE_CONTROL_BIT) == TORQUE_CONTROL_BIT) {
+			state_machine.control = CONTROL_TORQUE;
+			state_machine.status = ((state_machine.status ^ SPEED_CONTROL_BIT)| TORQUE_CONTROL_BIT);
+		}
+}
+
+void control_torque_transition() {
+	if ((state_machine.status_request & SPEED_CONTROL_BIT) == SPEED_CONTROL_BIT) {
+			state_machine.control = CONTROL_SPEED;
+			state_machine.status = ((state_machine.status ^ TORQUE_CONTROL_BIT)| SPEED_CONTROL_BIT);
+
+		} else if ((state_machine.status_request & POSITION_CONTROL_BIT) == POSITION_CONTROL_BIT) {
+			state_machine.control = CONTROL_POSITION;
+			state_machine.status = ((state_machine.status ^ TORQUE_CONTROL_BIT)| POSITION_CONTROL_BIT);
+		}
 }
 
 void state_init_transition() {
@@ -156,15 +185,30 @@ void state_error_transition() {
 }
 
 void control_position_function() {
+	motor.stepper_var.target_position = state_machine.target.position;
 	motor.stepper_var.update_flag = 1;
 }
 
 void control_speed_function() {
-	motor.stepper_var.target_position = motor.stepper_var.position + (motor.stepper_var.target_speed*CONTROL_PERIOD)/1000;
+	motor.stepper_var.subposition = motor.stepper_var.subposition+ ((float)(state_machine.target.speed*CONTROL_PERIOD))/1000.0;
+	if (motor.stepper_var.subposition>=1.0 || motor.stepper_var.subposition<=-1.0) {
+	motor.stepper_var.target_position = motor.stepper_var.position + ((int32_t)trunc(motor.stepper_var.subposition));
 	motor.stepper_var.update_flag = 1;
+	motor.stepper_var.subposition = motor.stepper_var.subposition-trunc(motor.stepper_var.subposition);
+	}
+
 }
 
 void control_torque_function() {
+	int16_t actual_tension = (int16_t)loadcell_get_value(&loadcell);
+	int32_t delta_position = (int32_t)pid_update(&tension_pid, (double)(state_machine.target.torque-actual_tension));
+	if (abs(delta_position)<5) {
+	motor.stepper_var.target_position = motor.stepper_var.position + delta_position;
+	} else if (delta_position>0){
+		motor.stepper_var.target_position = motor.stepper_var.position + 5;
+	} else {
+		motor.stepper_var.target_position = motor.stepper_var.position - 5;
+	}
 	motor.stepper_var.update_flag = 1;
 }
 

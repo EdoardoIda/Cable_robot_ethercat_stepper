@@ -37,11 +37,9 @@ void stepper_init(stepperRT_t* stepper, TIM_HandleTypeDef* timer, uint16_t contr
 	stepper->stepper_par.rad_to_steps = 2.0 * M_PI / ((double) step_per_rev);
 
 	stepper->stepper_var.position = 0;
+	stepper->stepper_var.subposition = 0.0;
 	stepper->stepper_var.speed = 0;
-	stepper->stepper_var.torque = 0;
 	stepper->stepper_var.target_position = 0;
-	stepper->stepper_var.target_speed = 0;
-	stepper->stepper_var.target_torque = 0;
 	stepper->stepper_var.direction = STP_FORWARD;
 	stepper->stepper_var.us_period = 0;
 	stepper->stepper_var.us_cur_time = 0;
@@ -104,4 +102,16 @@ void stepper_update(stepperRT_t* stepper) {
 	 stepper_set_period(stepper,-delta);
  }
  stepper_set_dir(stepper);
+}
+
+void stepper_set_period(stepperRT_t* stepper,uint16_t delta) {
+	if (delta>0) {
+		if (2*delta > stepper->stepper_par.step4cycle_max) {
+			stepper->stepper_var.us_period = 1;
+		} else {
+			stepper->stepper_var.us_period = stepper->stepper_par.step4cycle_max/(2*delta);
+		}
+	} else {
+		stepper->stepper_var.us_period =0;
+	}
 }
