@@ -42,7 +42,7 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 	error_manager_init(error_handler, &red_led);
 	serial_init(&serial, &huart6, SERIAL_INTERRUPT);
 	encoder_init(&pulley_enc, Enc_A_PIN_GPIO_Port, Enc_A_PIN_Pin, Enc_B_PIN_GPIO_Port, Enc_B_PIN_Pin,
-				  Enc_Z_PIN_GPIO_Port, Enc_Z_PIN_Pin, ENC3_FORWARD, 5000);
+				  Enc_Z_PIN_GPIO_Port, Enc_Z_PIN_Pin, ENC3_FORWARD, 10000);
 	loadcell_init(&loadcell,&hadc3,1);
 	stepper_init(&motor, &htim3, CONTROL_PERIOD,
 				Endstop_up_PIN_GPIO_Port, Endstop_up_PIN_Pin,

@@ -16,11 +16,11 @@ void pid_init(my_pid_t *pid, double Kp, double Ki, double Kd, uint16_t control_p
 	double a1 = -(2+N*Ts);
 	double a2 = 1;
 
-	pid->pid_par.cu_i_1 = -a1/a0;
-	pid->pid_par.cu_i_2 = -a2/a0;
-	pid->pid_par.ce_i_0 = b0/a0;
-	pid->pid_par.ce_i_1 = b1/a0;
-	pid->pid_par.ce_i_2 = b2/a0;
+	pid->pid_par.cu_i_1 = a1/a0;
+	pid->pid_par.cu_i_2 = a2/a0;
+	pid->pid_par.ce_i_0 = -b0/a0;
+	pid->pid_par.ce_i_1 = -b1/a0;
+	pid->pid_par.ce_i_2 = -b2/a0;
 
 	pid->pid_var.e[0] = 0;
 	pid->pid_var.e[1] = 0;
