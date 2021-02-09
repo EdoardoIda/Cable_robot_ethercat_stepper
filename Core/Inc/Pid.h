@@ -28,7 +28,8 @@ typedef struct {
 	pid_par_t pid_par;
 }  my_pid_t;
 
-void pid_init(my_pid_t* pid, double Kp, double Ki, double Kd, uint16_t control_period_ms, double N);
+void pid_init(my_pid_t* pid, double Kp, double Ki, double Kd, uint16_t control_period_ms, uint16_t filter_frequency_Hz);
+void pid_reset(my_pid_t* pid);
 double pid_update(my_pid_t* pid, double e);
 
 #endif /* INC_PID_H_ */

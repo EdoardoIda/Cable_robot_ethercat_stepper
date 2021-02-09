@@ -53,13 +53,14 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 				Alarm_PIN_GPIO_Port, Alarm_PIN_Pin,
 				STEP_PER_REV, STP_CW);
 	easyCat_Init(ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin,error_handler);
-	pid_init(&tension_pid, 0.01, 0.002, 0.00001, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
+	pid_init(&tension_pid, 0.05, 0.008, 0.0003, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
 
 	state_manager->control = CONTROL_POSITION;
 	state_manager->state = STATE_INIT;
 	state_manager->ethercat = ethercat;
 	state_manager->error_handler = error_handler;
 	state_manager->status = 0;
+	state_manager->status = state_manager->status ^ POSITION_CONTROL_BIT;
 	state_manager->status_request = IDLE_STATE_BIT;
 	state_manager->target.position = 0;
 	state_manager->target.speed = 0;
@@ -123,6 +124,7 @@ void control_position_transition() {
 		state_machine.status = ((state_machine.status ^ POSITION_CONTROL_BIT)| SPEED_CONTROL_BIT);
 	} else if ((state_machine.status_request & TORQUE_CONTROL_BIT) == TORQUE_CONTROL_BIT) {
 		state_machine.control = CONTROL_TORQUE;
+		pid_reset(&tension_pid);
 		state_machine.status = ((state_machine.status ^ POSITION_CONTROL_BIT)| TORQUE_CONTROL_BIT);
 	}
 }
@@ -134,6 +136,7 @@ void control_speed_transition() {
 
 		} else if ((state_machine.status_request & TORQUE_CONTROL_BIT) == TORQUE_CONTROL_BIT) {
 			state_machine.control = CONTROL_TORQUE;
+			pid_reset(&tension_pid);
 			state_machine.status = ((state_machine.status ^ SPEED_CONTROL_BIT)| TORQUE_CONTROL_BIT);
 		}
 }
@@ -202,13 +205,7 @@ void control_speed_function() {
 void control_torque_function() {
 	int16_t actual_tension = (int16_t)loadcell_get_value(&loadcell);
 	int32_t delta_position = (int32_t)pid_update(&tension_pid, (double)(state_machine.target.torque-actual_tension));
-	if (abs(delta_position)<5) {
 	motor.stepper_var.target_position = motor.stepper_var.position + delta_position;
-	} else if (delta_position>0){
-		motor.stepper_var.target_position = motor.stepper_var.position + 5;
-	} else {
-		motor.stepper_var.target_position = motor.stepper_var.position - 5;
-	}
 	motor.stepper_var.update_flag = 1;
 }
 

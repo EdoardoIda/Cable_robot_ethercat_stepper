@@ -28,7 +28,7 @@
 #define OPERATIONAL_BLINK_PERIOD 500
 #define ERROR_BLINK_PERIOD 250
 
-#define DEFAULT_PID_FREQ_FILTER 2*M_PI*100
+#define DEFAULT_PID_FREQ_FILTER 100
 
 #include "main.h"
 #include "adc.h"
