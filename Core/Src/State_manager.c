@@ -53,7 +53,7 @@ void state_manager_init(state_manager_t *state_manager, Easycat *ethercat, error
 				Alarm_PIN_GPIO_Port, Alarm_PIN_Pin,
 				STEP_PER_REV, STP_CW);
 	easyCat_Init(ethercat,&hspi1,Ethercat_SS_GPIO_Port,Ethercat_SS_Pin,error_handler);
-	pid_init(&tension_pid, 0.05, 0.008, 0.0003, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
+	pid_init(&tension_pid, 0.03, 0.005, 0.00015, CONTROL_PERIOD, DEFAULT_PID_FREQ_FILTER);
 
 	state_manager->control = CONTROL_POSITION;
 	state_manager->state = STATE_INIT;

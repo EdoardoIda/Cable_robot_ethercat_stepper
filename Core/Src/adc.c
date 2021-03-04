@@ -59,10 +59,10 @@ void MX_ADC3_Init(void)
     }
 
 
-  if (HAL_ADCEx_Calibration_Start(&hadc3, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
-    {
-      Error_Handler();
-    }
+//  if (HAL_ADCEx_Calibration_Start(&hadc3, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
+//    {
+//      Error_Handler();
+//    }
   /** Configure Regular Channel
       */
       sConfig.Channel = ADC_CHANNEL_2;

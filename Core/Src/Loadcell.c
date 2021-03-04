@@ -12,7 +12,7 @@ void loadcell_init(loadcell_t *loadcell, ADC_HandleTypeDef *hadc, uint16_t v_to_
 	loadcell->loadcell_par.voltage_to_tension = v_to_N;
 	HAL_ADC_Start(loadcell->loadcell_par.adc_handle);
 	loadcell->loadcell_filter.previous_value = 0;
-	loadcell->loadcell_filter.beta_par = 30;
+	loadcell->loadcell_filter.beta_par = 5;
 
 }
 
